@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum - Jajak Tarus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://sql.js.org/dist/sql-wasm.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/database.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: '#1B4332',
+                        sage: '#40916C',
+                        sunset: '#F77F00',
+                        cream: '#FEFAE0',
+                        deep: '#081C15',
+                        textgreen: '#2D6A4F',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #FEFAE0; color: #2D6A4F; }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        .modal { opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .modal.active { opacity: 1; visibility: visible; }
+        .modal-content { transform: scale(0.9); transition: all 0.3s ease; }
+        .modal.active .modal-content { transform: scale(1); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #FEFAE0; }
+        ::-webkit-scrollbar-thumb { background: #40916C; border-radius: 4px; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-up { animation: fadeUp 0.5s ease forwards; }
+    </style>
+</head>
+<body class="antialiased min-h-screen">
+    <!-- Header -->
+    <header class="bg-forest text-white sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="flex items-center gap-2 hover:text-sunset transition-colors">
+                    <svg class="w-8 h-8 text-sunset" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 19h20L12 2zm0 3.5L18.5 18h-13L12 5.5z"/>
+                    </svg>
+                    <span class="font-poppins font-bold text-xl">Jajak<span class="text-sunset">Tarus</span></span>
+                </a>
+                <nav class="flex items-center gap-6">
+                    <a href="index.html" class="hover:text-sunset transition-colors">Beranda</a>
+                    <a href="index.html#trip" class="hover:text-sunset transition-colors">Trip</a>
+                    <a href="index.html#anggota" class="hover:text-sunset transition-colors">Anggota</a>
+                    <a href="forum.html" class="text-sunset font-semibold">Forum</a>
+                    <a href="index.html#kontak" class="hover:text-sunset transition-colors">Kontak</a>
+                </nav>
+                <div id="auth-buttons" class="flex items-center gap-3">
+                    <!-- Will be rendered by JS -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Forum Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Sidebar -->
+            <div class="lg:w-1/4">
+                <!-- New Topic Button -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg mb-6">
+                    <button onclick="openNewTopicModal()" class="w-full bg-sunset hover:bg-orange-600 text-white py-3 rounded-xl font-poppins font-semibold flex items-center justify-center gap-2 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Buat Topik Baru
+                    </button>
+                </div>
+                
+                <!-- Categories -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg mb-6">
+                    <h3 class="font-poppins font-bold text-forest mb-4">Kategori</h3>
+                    <div class="space-y-2" id="category-list">
+                        <button onclick="showCategory('all')" class="cat-btn active w-full text-left px-4 py-3 rounded-xl bg-cream font-bold text-sunset flex items-center justify-between" data-cat="all">
+                            <span>Semua Topik</span>
+                            <span id="count-all" class="bg-sunset/20 text-sunset px-2 py-1 rounded-full text-xs">0</span>
+                        </button>
+                        <button onclick="showCategory('tips')" class="cat-btn w-full text-left px-4 py-3 rounded-xl text-textgreen hover:bg-cream transition-colors flex items-center justify-between" data-cat="tips">
+                            <span>Tips Pendakian</span>
+                            <span id="count-tips" class="bg-sage/20 text-sage px-2 py-1 rounded-full text-xs">0</span>
+                        </button>
+                        <button onclick="showCategory('gear')" class="cat-btn w-full text-left px-4 py-3 rounded-xl text-textgreen hover:bg-cream transition-colors flex items-center justify-between" data-cat="gear">
+                            <span>Gear & Perlengkapan</span>
+                            <span id="count-gear" class="bg-sage/20 text-sage px-2 py-1 rounded-full text-xs">0</span>
+                        </button>
+                        <button onclick="showCategory('story')" class="cat-btn w-full text-left px-4 py-3 rounded-xl text-textgreen hover:bg-cream transition-colors flex items-center justify-between" data-cat="story">
+                            <span>Cerita & Pengalaman</span>
+                            <span id="count-story" class="bg-sage/20 text-sage px-2 py-1 rounded-full text-xs">0</span>
+                        </button>
+                        <button onclick="showCategory('question')" class="cat-btn w-full text-left px-4 py-3 rounded-xl text-textgreen hover:bg-cream transition-colors flex items-center justify-between" data-cat="question">
+                            <span>Pertanyaan</span>
+                            <span id="count-question" class="bg-sage/20 text-sage px-2 py-1 rounded-full text-xs">0</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Popular Topics -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg">
+                    <h3 class="font-poppins font-bold text-forest mb-4">Topik Populer</h3>
+                    <div id="popular-topics" class="space-y-3">
+                        <!-- Will be rendered by JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="lg:w-3/4">
+                <!-- Topics List -->
+                <div id="topics-list" class="space-y-4">
+                    <!-- Will be rendered by JS -->
+                </div>
+                
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden bg-white rounded-2xl p-12 text-center shadow-lg">
+                    <svg class="w-20 h-20 text-sage/50 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                    </svg>
+                    <p class="text-textgreen text-lg mb-4">Belum ada topik di kategori ini</p>
+                    <button onclick="openNewTopicModal()" class="bg-sunset hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors">Buat Topik Pertama</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New Topic Modal -->
+    <div id="new-topic-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Buat Topik Baru</h2>
+                    <button onclick="closeModal('new-topic-modal')" class="w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <form id="new-topic-form" onsubmit="submitNewTopic(event)">
+                    <div class="mb-4">
+                        <label class="block text-textgreen font-medium mb-2">Judul Topik</label>
+                        <input type="text" name="title" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen focus:border-sunset focus:outline-none" placeholder="Judul topik...">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-textgreen font-medium mb-2">Kategori</label>
+                        <select name="category" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen focus:border-sunset focus:outline-none">
+                            <option value="tips">Tips Pendakian</option>
+                            <option value="gear">Gear & Perlengkapan</option>
+                            <option value="story">Cerita & Pengalaman</option>
+                            <option value="question">Pertanyaan</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-textgreen font-medium mb-2">Konten</label>
+                        <textarea name="content" rows="6" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen focus:border-sunset focus:outline-none resize-none" placeholder="Tulis konten topik di sini..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-sunset hover:bg-orange-600 text-white py-4 rounded-xl font-poppins font-semibold transition-colors">
+                        Posting Topik
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topic Detail Modal -->
+    <div id="topic-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="topic-modal-title" class="font-poppins font-bold text-2xl text-forest">Judul Topik</h2>
+                    <button onclick="closeModal('topic-modal')" class="w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="topic-modal-content">
+                    <!-- Will be rendered by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-forest text-white px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all z-50">
+        <span id="toast-message">Message</span>
+    </div>
+
+    <script>
+        // ==================== DATA ====================
+        let forumTopics = JSON.parse(localStorage.getItem('jajakTarus_forum') || '[]');
+        let forumReplies = JSON.parse(localStorage.getItem('jajakTarus_forum_replies') || '[]');
+        let currentUser = JSON.parse(localStorage.getItem('jajakTarus_currentUser')) || null;
+        let currentCategory = 'all';
+        let selectedTopicId = null;
+
+        // Initialize default data
+        if (forumTopics.length === 0) {
+            forumTopics = [
+                { id: 1, title: "Tips Mendaki Gunung untuk Pemula", category: "tips", author: "Rizky Pratama", authorId: 1, content: "Hai semua! Buat kalian yang baru pertama kali mendaki gunung, berikut tips dari saya:\n\n1. Latihan fisik minimal 2 minggu sebelum pendakian\n2. Pastikan perlengkapan lengkap\n3. Jangan malu bertanya pada guide\n4. Bawa air yang cukup\n5. Jangan mendaki sendirian\n\nSemoga bermanfaat!", createdAt: "2026-04-08T10:30:00Z", likes: 15, replies: 8, isSticky: true },
+                { id: 2, title: "Rekomendasi Sleeping Bag untuk Pendakian 2 Hari", category: "gear", author: "Dewi Lestari", authorId: 5, content: "Mau tanya rekomendasi sleeping bag yang cocok untuk pendakian 2 hari di gunung medium? Budget sekitar 500rb-1jt. Terima kasih!", createdAt: "2026-04-07T15:20:00Z", likes: 8, replies: 12, isSticky: false },
+                { id: 3, title: "Cerita Pendakian Saya ke Semeru Bulan Lalu", category: "story", author: "Agus Setiawan", authorId: 6, content: "Seneng banget finally bisa summit Semeru! Perjalanan 4 hari 3 malam emang nggak gampang, tapi view di atas sana bikin lupa capek. Ranu Kumbolo nya cantik banget!", createdAt: "2026-04-06T08:45:00Z", likes: 23, replies: 15, isSticky: false },
+                { id: 4, title: "Berapa Liter Air untuk Pendakian 3 Hari?", category: "question", author: "Maya Putri", authorId: 7, content: "Halo! Mau tanya untuk pendakian 3 hari biasanya bawa berapa liter air ya?", createdAt: "2026-04-05T20:15:00Z", likes: 5, replies: 6, isSticky: false }
+            ];
+            localStorage.setItem('jajakTarus_forum', JSON.stringify(forumTopics));
+            
+            forumReplies = [
+                { id: 1, topicId: 1, author: "Ahmad Fauzi", content: "Bagus banget tipsnya!", createdAt: "2026-04-08T11:00:00Z", likes: 3 },
+                { id: 2, topicId: 2, author: "Budi Santoso", content: "Saya recommend Decathlon Forclaz MT500!", createdAt: "2026-04-07T16:00:00Z", likes: 4 }
+            ];
+            localStorage.setItem('jajakTarus_forum_replies', JSON.stringify(forumReplies));
+        }
+
+        // ==================== HELPERS ====================
+        function getCategoryLabel(cat) {
+            const labels = { tips: 'Tips', story: 'Cerita', gear: 'Gear', question: 'Pertanyaan' };
+            return labels[cat] || cat;
+        }
+
+        function getCategoryBgClass(cat) {
+            const classes = { tips: 'bg-sage/20 text-sage', story: 'bg-sunset/20 text-sunset', gear: 'bg-purple-500/20 text-purple-500', question: 'bg-blue-500/20 text-blue-500' };
+            return classes[cat] || 'bg-sage/20 text-sage';
+        }
+
+        function formatRelativeTime(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(hours / 24);
+            if (days > 0) return days + ' hari lalu';
+            if (hours > 0) return hours + ' jam lalu';
+            return 'Baru saja';
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // ==================== MAIN FUNCTIONS ====================
+        function showCategory(cat) {
+            currentCategory = cat;
+            
+            // Update button styles
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                const isActive = btn.dataset.cat === cat;
+                btn.classList.toggle('bg-cream', isActive);
+                btn.classList.toggle('font-bold', isActive);
+                btn.classList.toggle('text-sunset', isActive);
+                btn.classList.toggle('text-textgreen', !isActive);
+                
+                const countEl = btn.querySelector('span:last-child');
+                if (countEl) {
+                    countEl.classList.toggle('bg-sunset/20', isActive);
+                    countEl.classList.toggle('text-sunset', isActive);
+                    countEl.classList.toggle('bg-sage/20', !isActive);
+                    countEl.classList.toggle('text-sage', !isActive);
+                }
+            });
+            
+            renderTopics();
+        }
+
+        function renderTopics() {
+            const list = document.getElementById('topics-list');
+            const empty = document.getElementById('empty-state');
+            
+            // Update counts
+            ['all', 'tips', 'gear', 'story', 'question'].forEach(cat => {
+                const count = cat === 'all' ? forumTopics.length : forumTopics.filter(t => t.category === cat).length;
+                document.getElementById('count-' + cat).textContent = count;
+            });
+            
+            // Filter topics
+            const filtered = currentCategory === 'all' 
+                ? [...forumTopics] 
+                : forumTopics.filter(t => t.category === currentCategory);
+            
+            if (filtered.length === 0) {
+                list.classList.add('hidden');
+                empty.classList.remove('hidden');
+            } else {
+                list.classList.remove('hidden');
+                empty.classList.add('hidden');
+                
+                // Sort: sticky first, then by date
+                filtered.sort((a, b) => {
+                    if (a.isSticky && !b.isSticky) return -1;
+                    if (!a.isSticky && b.isSticky) return 1;
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+                
+                list.innerHTML = filtered.map(topic => `
+                    <div onclick="openTopic(${topic.id})" class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all cursor-pointer animate-fade-up ${topic.isSticky ? 'border-l-4 border-sunset' : ''}">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-sage/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="font-poppins font-bold text-sage text-lg">${topic.author.charAt(0)}</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                                    ${topic.isSticky ? '<span class="px-2 py-1 bg-sunset/10 text-sunset text-xs font-medium rounded-full">Sticky</span>' : ''}
+                                    <span class="px-2 py-1 ${getCategoryBgClass(topic.category)} text-xs font-medium rounded-full">${getCategoryLabel(topic.category)}</span>
+                                </div>
+                                <h4 class="font-poppins font-bold text-lg text-forest mb-1 hover:text-sunset transition-colors">${topic.title}</h4>
+                                <p class="text-textgreen/70 text-sm line-clamp-2 mb-3">${topic.content.substring(0, 150)}...</p>
+                                <div class="flex items-center gap-4 text-textgreen/60 text-sm flex-wrap">
+                                    <span>by <strong>${topic.author}</strong></span>
+                                    <span>•</span>
+                                    <span>${formatRelativeTime(topic.createdAt)}</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center gap-4 text-textgreen/60">
+                                <div class="flex flex-col items-center">
+                                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                    <span class="text-sm font-medium">${topic.likes}</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                    <span class="text-sm font-medium">${topic.replies}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Render popular topics
+            const popular = [...forumTopics].sort((a, b) => b.likes - a.likes).slice(0, 5);
+            document.getElementById('popular-topics').innerHTML = popular.map(t => `
+                <div onclick="openTopic(${t.id})" class="cursor-pointer hover:bg-cream p-2 rounded-lg transition-colors">
+                    <p class="text-forest font-medium text-sm line-clamp-2">${t.title}</p>
+                    <p class="text-textgreen/60 text-xs">${t.likes} ❤️ • ${t.replies} 💬</p>
+                </div>
+            `).join('');
+        }
+
+        function openTopic(id) {
+            selectedTopicId = id;
+            const topic = forumTopics.find(t => t.id === id);
+            if (!topic) return;
+            
+            const replies = forumReplies.filter(r => r.topicId === id);
+            
+            document.getElementById('topic-modal-title').textContent = topic.title;
+            document.getElementById('topic-modal-content').innerHTML = `
+                <div class="mb-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="px-3 py-1 ${getCategoryBgClass(topic.category)} text-sm font-medium rounded-full">${getCategoryLabel(topic.category)}</span>
+                        ${topic.isSticky ? '<span class="px-3 py-1 bg-sunset/10 text-sunset text-sm font-medium rounded-full">Sticky</span>' : ''}
+                    </div>
+                    <div class="flex items-center gap-4 text-textgreen/60 text-sm mb-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-sage/20 rounded-full flex items-center justify-center">
+                                <span class="font-poppins font-bold text-sage text-sm">${topic.author.charAt(0)}</span>
+                            </div>
+                            <span>${topic.author}</span>
+                        </div>
+                        <span>•</span>
+                        <span>${formatRelativeTime(topic.createdAt)}</span>
+                    </div>
+                    <div class="prose text-textgreen leading-relaxed mb-6 whitespace-pre-line">
+                        ${topic.content}
+                    </div>
+                    <div class="flex items-center gap-4 border-t border-sage/20 pt-4">
+                        <button onclick="likeTopic(${topic.id})" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors text-textgreen/60">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                            <span>${topic.likes}</span>
+                        </button>
+                        <span class="flex items-center gap-2 text-textgreen/60">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                            <span>${replies.length} replies</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-sage/20 pt-6">
+                    <h4 class="font-poppins font-bold text-forest mb-4">${replies.length} Replies</h4>
+                    <div class="space-y-4 mb-6">
+                        ${replies.map(r => `
+                            <div class="bg-cream/50 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="w-8 h-8 bg-sage/20 rounded-full flex items-center justify-center">
+                                        <span class="font-poppins font-bold text-sage text-xs">${r.author.charAt(0)}</span>
+                                    </div>
+                                    <span class="font-medium text-textgreen">${r.author}</span>
+                                    <span class="text-textgreen/60 text-sm">• ${formatRelativeTime(r.createdAt)}</span>
+                                </div>
+                                <p class="text-textgreen/80 pl-10 whitespace-pre-line">${r.content}</p>
+                                <div class="pl-10 mt-2">
+                                    <button onclick="likeReply(${r.id})" class="text-textgreen/60 hover:text-red-400 flex items-center gap-1 text-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                        ${r.likes}
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    ${currentUser ? `
+                    <form onsubmit="submitReply(event)" class="space-y-3">
+                        <textarea id="reply-content" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen focus:border-sunset focus:outline-none resize-none" placeholder="Tulis balasan..."></textarea>
+                        <button type="submit" class="bg-sunset hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Kirim Balasan</button>
+                    </form>
+                    ` : `
+                    <div class="bg-cream/50 rounded-xl p-4 text-center">
+                        <p class="text-textgreen mb-2">Login untuk membalas</p>
+                        <a href="index.html" class="text-sunset font-medium hover:underline">Login di Beranda</a>
+                    </div>
+                    `}
+                </div>
+            `;
+            
+            openModal('topic-modal');
+        }
+
+        function likeTopic(id) {
+            const topic = forumTopics.find(t => t.id === id);
+            if (topic) {
+                topic.likes++;
+                localStorage.setItem('jajakTarus_forum', JSON.stringify(forumTopics));
+                openTopic(id);
+                renderTopics();
+            }
+        }
+
+        function likeReply(id) {
+            const reply = forumReplies.find(r => r.id === id);
+            if (reply) {
+                reply.likes++;
+                localStorage.setItem('jajakTarus_forum_replies', JSON.stringify(forumReplies));
+                openTopic(selectedTopicId);
+            }
+        }
+
+        function submitReply(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const content = document.getElementById('reply-content').value.trim();
+            if (!content) return;
+            
+            const reply = {
+                id: Date.now(),
+                topicId: selectedTopicId,
+                author: currentUser.name,
+                content: content,
+                createdAt: new Date().toISOString(),
+                likes: 0
+            };
+            
+            forumReplies.push(reply);
+            localStorage.setItem('jajakTarus_forum_replies', JSON.stringify(forumReplies));
+            
+            // Update topic reply count
+            const topic = forumTopics.find(t => t.id === selectedTopicId);
+            if (topic) {
+                topic.replies++;
+                localStorage.setItem('jajakTarus_forum', JSON.stringify(forumTopics));
+            }
+            
+            showToast('Balasan terkirim!');
+            openTopic(selectedTopicId);
+            renderTopics();
+        }
+
+        function openNewTopicModal() {
+            if (!currentUser) {
+                showToast('Login terlebih dahulu!');
+                window.location.href = 'index.html';
+                return;
+            }
+            openModal('new-topic-modal');
+        }
+
+        function submitNewTopic(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const form = e.target;
+            const title = form.title.value.trim();
+            const category = form.category.value;
+            const content = form.content.value.trim();
+            
+            if (!title || !content) return;
+            
+            const topic = {
+                id: Date.now(),
+                title: title,
+                category: category,
+                author: currentUser.name,
+                authorId: currentUser.id,
+                content: content,
+                createdAt: new Date().toISOString(),
+                likes: 0,
+                replies: 0,
+                isSticky: false
+            };
+            
+            forumTopics.unshift(topic);
+            localStorage.setItem('jajakTarus_forum', JSON.stringify(forumTopics));
+            
+            closeModal('new-topic-modal');
+            form.reset();
+            showToast('Topik berhasil dibuat!');
+            
+            showCategory('all');
+            renderTopics();
+        }
+
+        function renderAuthButtons() {
+            const authDiv = document.getElementById('auth-buttons');
+            if (currentUser) {
+                authDiv.innerHTML = `
+                    <span class="text-white/80">${currentUser.name}</span>
+                    <button onclick="logout()" class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-300 transition-colors">Logout</button>
+                `;
+            } else {
+                authDiv.innerHTML = `
+                    <a href="index.html" class="px-4 py-2 bg-sunset hover:bg-orange-600 rounded-lg text-white transition-colors">Login</a>
+                `;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('jajakTarus_currentUser');
+            window.location.reload();
+        }
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAuthButtons();
+            renderTopics();
+        });
+    </script>
+</body>
+</html>

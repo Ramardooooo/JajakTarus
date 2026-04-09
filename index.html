@@ -6,6 +6,9 @@
     <title>Jajak Tarus - Komunitas Pendaki Indonesia</title>
     <meta name="description" content="Jajak Tarus - Komunitas pendaki 8 sahabat yang menjelajahi keindahan gunung-gunung Indonesia bersama">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://sql.js.org/dist/sql-wasm.js"></script>
+    <script src="js/config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Mountains+of+Christmas:wght@700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
@@ -149,7 +152,7 @@
             opacity: 1;
         }
         
-        input:focus, textarea:focus {
+        input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: #F77F00;
             box-shadow: 0 0 0 3px rgba(247, 127, 0, 0.2);
@@ -167,6 +170,326 @@
         
         .counter {
             font-variant-numeric: tabular-nums;
+        }
+        
+        .weather-card {
+            transition: all 0.3s ease;
+        }
+        
+        .weather-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .calendar-day {
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-day:hover:not(.empty):not(.other-month) {
+            background-color: #F77F00;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .calendar-day.selected {
+            background-color: #F77F00;
+            color: white;
+        }
+        
+        .calendar-day.has-trip {
+            position: relative;
+        }
+        
+        .calendar-day.has-trip::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background-color: #40916C;
+            border-radius: 50%;
+        }
+        
+        .blog-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .user-dropdown {
+            display: none;
+        }
+        
+        .user-dropdown.active {
+            display: block;
+        }
+        
+        .tab-btn.active {
+            background-color: #F77F00;
+            color: white;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #FEFAE0;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #40916C;
+            border-radius: 4px;
+        }
+        
+        /* Chatbot Styles */
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .chatbot-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1B4332, #40916C);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(27, 67, 50, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(27, 67, 50, 0.5);
+        }
+        
+        .chatbot-toggle svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+        
+        .chatbot-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 550px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+        
+        .chatbot-window.active {
+            display: flex;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .chatbot-header {
+            background: linear-gradient(135deg, #1B4332, #40916C);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .chatbot-header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .chatbot-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .chat-message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .chat-message.bot {
+            background: #FEFAE0;
+            color: #2D6A4F;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .chat-message.user {
+            background: #40916C;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .chat-message.loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chat-message.loading::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #40916C;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .chat-message.loading::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #40916C;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+            animation-delay: -0.32s;
+        }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        .chatbot-input {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chatbot-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 24px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .chatbot-input input:focus {
+            border-color: #40916C;
+        }
+        
+        .chatbot-input button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #40916C;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .chatbot-input button:hover {
+            background: #1B4332;
+        }
+        
+        .chatbot-input button svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+        
+        .chatbot-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .chatbot-close svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+        
+        .chatbot-close:hover svg {
+            opacity: 1;
+        }
+        
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        
+        .quick-action-btn {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #2D6A4F;
+        }
+        
+        .quick-action-btn:hover {
+            background: #40916C;
+            color: white;
+            border-color: #40916C;
+        }
+        
+        @media (max-width: 480px) {
+            .chatbot-window {
+                width: calc(100vw - 40px);
+                height: calc(100vh - 140px);
+                bottom: 70px;
+                right: -10px;
+            }
         }
     </style>
 </head>
@@ -190,8 +513,56 @@
                     <a href="#tentang" class="nav-link text-white hover:text-sunset transition-colors font-medium">Tentang</a>
                     <a href="#anggota" class="nav-link text-white hover:text-sunset transition-colors font-medium">Anggota</a>
                     <a href="#trip" class="nav-link text-white hover:text-sunset transition-colors font-medium">Trip</a>
-                    <a href="#galeri" class="nav-link text-white hover:text-sunset transition-colors font-medium">Galeri</a>
+                    <a href="forum.html" class="nav-link text-white hover:text-sunset transition-colors font-medium">Forum</a>
+                    <a href="#cuaca" class="nav-link text-white hover:text-sunset transition-colors font-medium">Cuaca</a>
                     <a href="#kontak" class="nav-link text-white hover:text-sunset transition-colors font-medium">Kontak</a>
+                </div>
+                
+                <!-- Auth Buttons / User Menu -->
+                <div class="hidden md:flex items-center gap-3">
+                    <div id="auth-buttons">
+                        <button id="login-btn" class="px-4 py-2 text-white hover:text-sunset transition-colors font-medium">Masuk</button>
+                        <button id="register-btn" class="btn-primary px-4 py-2 rounded-full text-white font-medium">Daftar</button>
+                    </div>
+                    <div id="user-menu" class="hidden relative">
+                        <button id="user-btn" class="flex items-center gap-2 text-white hover:text-sunset transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-sunset flex items-center justify-center overflow-hidden border-2 border-white">
+                                <img id="user-avatar-img" src="" class="w-full h-full object-cover hidden">
+                                <span id="user-initial" class="font-poppins font-bold text-white">U</span>
+                            </div>
+                            <span id="user-name" class="font-medium">User</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div id="user-dropdown" class="user-dropdown absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl py-2 z-50">
+                            <a href="user-dashboard.html" class="block px-4 py-2 text-textgreen hover:bg-cream transition-colors">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                                Dashboard Saya
+                            </a>
+                            <a href="user-dashboard.html#bookings" class="block px-4 py-2 text-textgreen hover:bg-cream transition-colors">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                Booking Saya
+                            </a>
+                            <a href="user-dashboard.html#achievements" class="block px-4 py-2 text-textgreen hover:bg-cream transition-colors">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                                </svg>
+                                Achievements
+                            </a>
+                            <hr class="my-2 border-sage/20">
+                            <button id="logout-btn" class="w-full text-left px-4 py-2 text-red-500 hover:bg-cream transition-colors">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                                Keluar
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Mobile Menu Button -->
@@ -210,8 +581,13 @@
                 <a href="#tentang" class="block text-white hover:text-sunset transition-colors font-medium py-2 mobile-nav-link">Tentang</a>
                 <a href="#anggota" class="block text-white hover:text-sunset transition-colors font-medium py-2 mobile-nav-link">Anggota</a>
                 <a href="#trip" class="block text-white hover:text-sunset transition-colors font-medium py-2 mobile-nav-link">Trip</a>
-                <a href="#galeri" class="block text-white hover:text-sunset transition-colors font-medium py-2 mobile-nav-link">Galeri</a>
+                <a href="forum.html" class="block text-white hover:text-sunset transition-colors font-medium py-2 mobile-nav-link">Forum</a>
+                <a href="#cuaca" class="block text-white hover:text-sunset transition-colors font-medium py-2 mobile-nav-link">Cuaca</a>
                 <a href="#kontak" class="block text-white hover:text-sunset transition-colors font-medium py-2 mobile-nav-link">Kontak</a>
+                <div id="mobile-auth" class="pt-4 border-t border-white/20 mt-4">
+                    <button id="mobile-login-btn" class="block w-full text-left text-white hover:text-sunset transition-colors font-medium py-2">Masuk</button>
+                    <button id="mobile-register-btn" class="block w-full btn-primary px-4 py-2 rounded-full text-white font-medium text-center mt-2">Daftar</button>
+                </div>
             </div>
         </div>
     </nav>
@@ -233,12 +609,12 @@
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="#trip" class="btn-primary px-8 py-4 rounded-full text-white font-poppins font-semibold text-lg inline-flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
-                    Gabung Trip Kami
+                    Booking Trip
                 </a>
-                <a href="#tentang" class="px-8 py-4 rounded-full border-2 border-white text-white font-poppins font-semibold text-lg hover:bg-white hover:text-forest transition-all inline-flex items-center justify-center gap-2">
-                    Pelajari Lebih Lanjut
+                <a href="#blog" class="px-8 py-4 rounded-full border-2 border-white text-white font-poppins font-semibold text-lg hover:bg-white hover:text-forest transition-all inline-flex items-center justify-center gap-2">
+                    Baca Artikel
                 </a>
             </div>
         </div>
@@ -291,7 +667,7 @@
                     </div>
                     <h3 class="font-poppins font-bold text-2xl text-forest mb-4">Visi Kami</h3>
                     <p class="text-textgreen leading-relaxed">
-                        Menjadi komunitas pendaki yangsolid dan inspiratif, menyebarkan semangat cinta alam dan gotong royong kepada generasi muda Indonesia untuk ikut melestarikan keindahan alam Nusantara.
+                        Menjadi komunitas pendaki yang solid dan inspiratif, menyebarkan semangat cinta alam dan gotong royong kepada generasi muda Indonesia untuk ikut melestarikan keindahan alam Nusantara.
                     </p>
                 </div>
                 <div class="bg-white rounded-2xl p-8 shadow-lg border-l-4 border-sage">
@@ -361,7 +737,7 @@
         </div>
     </section>
 
-    <!-- Trip Section -->
+    <!-- Trip Section with Booking -->
     <section id="trip" class="py-20 lg:py-28 topo-pattern">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12 animate-fade-up">
@@ -371,26 +747,148 @@
                 <p class="text-textgreen mt-6 max-w-2xl mx-auto">Pilih destinasi yang sesuai dengan level dan budget kamu. Setiap gunung memiliki harga berbeda berdasarkan jarak dan kesulitan.</p>
             </div>
             
-            <!-- Filter Buttons -->
-            <div class="flex flex-wrap justify-center gap-3 mb-12 animate-fade-up">
-                <button class="filter-btn active px-6 py-2 rounded-full font-medium transition-all bg-sunset text-white" data-filter="all">Semua</button>
-                <button class="filter-btn px-6 py-2 rounded-full font-medium transition-all bg-white text-textgreen hover:bg-sunset hover:text-white" data-filter="easy">Pemula</button>
-                <button class="filter-btn px-6 py-2 rounded-full font-medium transition-all bg-white text-textgreen hover:bg-sunset hover:text-white" data-filter="medium">Menengah</button>
-                <button class="filter-btn px-6 py-2 rounded-full font-medium transition-all bg-white text-textgreen hover:bg-sunset hover:text-white" data-filter="hard">Lanjutan</button>
+            <!-- Tabs -->
+            <div class="flex justify-center gap-4 mb-8 animate-fade-up">
+                <button class="tab-btn active px-6 py-3 rounded-full font-medium transition-all bg-white text-textgreen shadow" data-tab="list">Daftar Trip</button>
+                <button class="tab-btn px-6 py-3 rounded-full font-medium transition-all bg-white text-textgreen shadow hover:bg-sunset hover:text-white" data-tab="calendar">Kalender</button>
             </div>
             
-            <!-- Trip Cards -->
-            <div id="trips-grid" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Trips will be rendered by JS -->
+            <!-- Trip List -->
+            <div id="trip-list" class="tab-content">
+
+                
+                <!-- Trip Cards -->
+                <div id="trips-grid" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Trips will be rendered by JS -->
+                </div>
+                
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden text-center py-16">
+                    <svg class="w-20 h-20 text-sage/50 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-textgreen text-lg">Tidak ada trip dengan filter tersebut</p>
+                </div>
             </div>
             
-            <!-- Empty State -->
-            <div id="empty-state" class="hidden text-center py-16">
-                <svg class="w-20 h-20 text-sage/50 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Calendar View -->
+            <div id="trip-calendar" class="tab-content hidden">
+                <div class="bg-white rounded-2xl p-6 shadow-xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <button id="prev-month" class="w-10 h-10 bg-sage/20 hover:bg-sage/30 rounded-full flex items-center justify-center transition-colors">
+                            <svg class="w-5 h-5 text-forest" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h3 id="calendar-title" class="font-poppins font-bold text-xl text-forest">April 2026</h3>
+                        <button id="next-month" class="w-10 h-10 bg-sage/20 hover:bg-sage/30 rounded-full flex items-center justify-center transition-colors">
+                            <svg class="w-5 h-5 text-forest" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Calendar Grid -->
+                    <div class="grid grid-cols-7 gap-2 mb-4">
+                        <div class="text-center text-textgreen/60 font-medium text-sm py-2">Min</div>
+                        <div class="text-center text-textgreen/60 font-medium text-sm py-2">Sen</div>
+                        <div class="text-center text-textgreen/60 font-medium text-sm py-2">Sel</div>
+                        <div class="text-center text-textgreen/60 font-medium text-sm py-2">Rab</div>
+                        <div class="text-center text-textgreen/60 font-medium text-sm py-2">Kam</div>
+                        <div class="text-center text-textgreen/60 font-medium text-sm py-2">Jum</div>
+                        <div class="text-center text-textgreen/60 font-medium text-sm py-2">Sab</div>
+                    </div>
+                    
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-2">
+                        <!-- Calendar days will be rendered by JS -->
+                    </div>
+                    
+                    <!-- Legend -->
+                    <div class="flex flex-wrap gap-4 mt-6 pt-6 border-t border-sage/20">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-sunset"></div>
+                            <span class="text-textgreen text-sm">Tanggal Dipilih</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-sage relative">
+                                <div class="absolute -bottom-1 -right-1 w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                            <span class="text-textgreen text-sm">Trip Tersedia</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Trip Info -->
+                    <div id="selected-trip-info" class="hidden mt-6 p-4 bg-cream rounded-xl">
+                        <p class="text-textgreen font-medium mb-2">Trip di tanggal ini:</p>
+                        <div id="selected-trips-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Weather Section -->
+    <section id="cuaca" class="py-20 lg:py-28 bg-forest">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12 animate-fade-up">
+                <p class="font-christmas text-sunset text-xl mb-2">Perkiraan Cuaca</p>
+                <h2 class="font-poppins font-bold text-4xl md:text-5xl text-white mb-4">Cek Cuaca</h2>
+                <div class="w-24 h-1 bg-sunset mx-auto rounded-full"></div>
+                <p class="text-white/70 mt-6 max-w-2xl mx-auto">Cek cuaca untuk lokasi pendakianmu</p>
+            </div>
+            
+            <!-- Search Box -->
+            <div class="bg-white rounded-2xl p-6 shadow-2xl animate-fade-up mb-8">
+                <div class="flex gap-4">
+                    <div class="flex-1 relative">
+                        <input type="text" id="weather-search-input" placeholder="Cari lokasi... (cth: Yogyakarta, Jakarta, Bandung)" class="w-full px-5 py-4 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen focus:border-sunset focus:outline-none text-lg">
+                        <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-textgreen/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <button onclick="searchWeather()" class="px-8 py-4 bg-sunset hover:bg-orange-600 text-white rounded-xl font-semibold transition-colors flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        Cari
+                    </button>
+                </div>
+                <p class="text-textgreen/60 text-sm mt-3">Tekan Enter untuk mencari</p>
+            </div>
+            
+            <!-- Quick Search Chips -->
+            <div class="flex flex-wrap justify-center gap-2 mb-8 animate-fade-up">
+                <button onclick="quickSearch('Jakarta')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Jakarta</button>
+                <button onclick="quickSearch('Bandung')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Bandung</button>
+                <button onclick="quickSearch('Banjarmasin')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Banjarmasin</button>
+                <button onclick="quickSearch('Yogyakarta')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Yogyakarta</button>
+                <button onclick="quickSearch('Surabaya')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Surabaya</button>
+                <button onclick="quickSearch('Malang')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Malang</button>
+                <button onclick="quickSearch('Semarang')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Semarang</button>
+                <button onclick="quickSearch('Makassar')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-colors">Makassar</button>
+            </div>
+            
+            <!-- Loading State -->
+            <div id="weather-loading" class="hidden text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/30 border-t-white"></div>
+                <p class="text-white/70 mt-4">Mencari cuaca...</p>
+            </div>
+            
+            <!-- Weather Result -->
+            <div id="weather-result" class="hidden animate-fade-up">
+                <!-- Will be rendered by JS -->
+            </div>
+            
+            <!-- No Result -->
+            <div id="weather-no-result" class="hidden text-center py-12">
+                <svg class="w-16 h-16 text-white/30 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <p class="text-textgreen text-lg">Tidak ada trip dengan filter tersebut</p>
+                <p class="text-white/70">Lokasi tidak ditemukan. Coba nama kota lain.</p>
             </div>
+            
+            <!-- Weather Info -->
+            <p id="weather-source" class="text-white/40 text-sm text-center mt-8">Data dari Open-Meteo API</p>
         </div>
     </section>
 
@@ -530,6 +1028,251 @@
         </div>
     </section>
 
+    <!-- Admin Dashboard Section (Only visible when logged in as admin) -->
+    <section id="admin" class="py-20 lg:py-28 hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12 animate-fade-up">
+                <p class="font-christmas text-sunset text-xl mb-2">Management</p>
+                <h2 class="font-poppins font-bold text-4xl md:text-5xl text-forest mb-4">Admin Dashboard</h2>
+                <div class="w-24 h-1 bg-sunset mx-auto rounded-full"></div>
+            </div>
+            
+            <!-- Admin Tabs -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8 animate-fade-up">
+                <button class="admin-tab-btn active px-6 py-3 rounded-full font-medium transition-all bg-sunset text-white" data-tab="overview">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                    </svg>
+                    Overview
+                </button>
+                <button class="admin-tab-btn px-6 py-3 rounded-full font-medium transition-all bg-white text-textgreen shadow hover:bg-sunset hover:text-white" data-tab="users">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    Users
+                </button>
+                <button class="admin-tab-btn px-6 py-3 rounded-full font-medium transition-all bg-white text-textgreen shadow hover:bg-sunset hover:text-white" data-tab="bookings">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                    Bookings
+                </button>
+                <button class="admin-tab-btn px-6 py-3 rounded-full font-medium transition-all bg-white text-textgreen shadow hover:bg-sunset hover:text-white" data-tab="forum-admin">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                    </svg>
+                    Forum
+                </button>
+                <button class="admin-tab-btn px-6 py-3 rounded-full font-medium transition-all bg-white text-textgreen shadow hover:bg-sunset hover:text-white" data-tab="messages">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    Messages
+                </button>
+                <button class="admin-tab-btn px-6 py-3 rounded-full font-medium transition-all bg-white text-textgreen shadow hover:bg-sunset hover:text-white" data-tab="trips-admin">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    </svg>
+                    Trips
+                </button>
+            </div>
+            
+            <!-- Admin Overview Tab -->
+            <div id="admin-overview" class="admin-content">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-2xl p-6 shadow-lg animate-fade-up">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-sunset/20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-sunset" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                            </div>
+                            <span class="text-green-500 text-sm font-medium">+0 today</span>
+                        </div>
+                        <p id="stat-users" class="font-poppins font-bold text-3xl text-forest">0</p>
+                        <p class="text-textgreen/70 text-sm">Total Users</p>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg animate-fade-up">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-sage/20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            </div>
+                            <span class="text-green-500 text-sm font-medium">+0 new</span>
+                        </div>
+                        <p id="stat-bookings" class="font-poppins font-bold text-3xl text-forest">0</p>
+                        <p class="text-textgreen/70 text-sm">Total Bookings</p>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg animate-fade-up">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <p id="stat-topics" class="font-poppins font-bold text-3xl text-forest">0</p>
+                        <p class="text-textgreen/70 text-sm">Forum Topics</p>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg animate-fade-up">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <p id="stat-messages" class="font-poppins font-bold text-3xl text-forest">0</p>
+                        <p class="text-textgreen/70 text-sm">Messages</p>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Recent Bookings -->
+                    <div class="bg-white rounded-2xl p-6 shadow-lg animate-fade-up">
+                        <h3 class="font-poppins font-bold text-xl text-forest mb-4">Booking Terbaru</h3>
+                        <div id="recent-bookings-list" class="space-y-4">
+                            <!-- Will be rendered by JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Forum Posts -->
+                    <div class="bg-white rounded-2xl p-6 shadow-lg animate-fade-up">
+                        <h3 class="font-poppins font-bold text-xl text-forest mb-4">Postingan Forum Terbaru</h3>
+                        <div id="recent-forum-list" class="space-y-4">
+                            <!-- Will be rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Users Tab -->
+            <div id="admin-users" class="admin-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden animate-fade-up">
+                    <div class="p-6 border-b border-sage/20">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <h3 class="font-poppins font-bold text-xl text-forest">Manajemen User</h3>
+                            <input type="text" id="user-search" placeholder="Cari user..." class="px-4 py-2 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen w-full sm:w-64">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-cream">
+                                <tr>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Nama</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Email</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">WhatsApp</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Bergabung</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Will be rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Bookings Tab -->
+            <div id="admin-bookings" class="admin-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden animate-fade-up">
+                    <div class="p-6 border-b border-sage/20">
+                        <div class="flex flex-wrap justify-between items-start sm:items-center gap-4">
+                            <h3 class="font-poppins font-bold text-xl text-forest">Manajemen Booking</h3>
+                            <div class="flex gap-2">
+                                <select id="booking-filter-status" class="px-4 py-2 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                                    <option value="all">Semua Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                                <input type="text" id="booking-search" placeholder="Cari booking..." class="px-4 py-2 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-cream">
+                                <tr>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Kode</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Trip</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Nama</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Tanggal</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Total</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Status</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-table-body">
+                                <!-- Will be rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Forum Tab -->
+            <div id="admin-forum-admin" class="admin-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden animate-fade-up">
+                    <div class="p-6 border-b border-sage/20">
+                        <div class="flex flex-wrap justify-between items-start sm:items-center gap-4">
+                            <h3 class="font-poppins font-bold text-xl text-forest">Manajemen Forum</h3>
+                            <input type="text" id="forum-admin-search" placeholder="Cari topik..." class="px-4 py-2 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        </div>
+                    </div>
+                    <div id="forum-admin-list" class="divide-y divide-sage/10">
+                        <!-- Will be rendered by JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Messages Tab -->
+            <div id="admin-messages" class="admin-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden animate-fade-up">
+                    <div class="p-6 border-b border-sage/20">
+                        <h3 class="font-poppins font-bold text-xl text-forest">Pesan Kontak</h3>
+                    </div>
+                    <div id="messages-list" class="divide-y divide-sage/10">
+                        <!-- Will be rendered by JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Trips Tab -->
+            <div id="admin-trips-admin" class="admin-content hidden">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden animate-fade-up">
+                    <div class="p-6 border-b border-sage/20 flex justify-between items-center">
+                        <h3 class="font-poppins font-bold text-xl text-forest">Manajemen Trip</h3>
+                        <button id="add-trip-btn" class="btn-primary px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Tambah Trip
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-cream">
+                                <tr>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Nama</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Lokasi</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Harga</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Kesulitan</th>
+                                    <th class="text-left px-6 py-3 text-textgreen font-medium text-sm">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trips-admin-table-body">
+                                <!-- Will be rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="bg-deep py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -551,7 +1294,7 @@
                         <li><a href="#tentang" class="text-white/60 hover:text-sunset transition-colors text-sm">Tentang</a></li>
                         <li><a href="#anggota" class="text-white/60 hover:text-sunset transition-colors text-sm">Anggota</a></li>
                         <li><a href="#trip" class="text-white/60 hover:text-sunset transition-colors text-sm">Trip</a></li>
-                        <li><a href="#galeri" class="text-white/60 hover:text-sunset transition-colors text-sm">Galeri</a></li>
+                        <li><a href="#blog" class="text-white/60 hover:text-sunset transition-colors text-sm">Blog</a></li>
                     </ul>
                 </div>
                 <div>
@@ -571,12 +1314,107 @@
         </div>
     </footer>
 
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-md w-full">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Masuk</h2>
+                    <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="login-modal">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Email</label>
+                        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="email@contoh.com">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Password</label>
+                        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="••••••••">
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center gap-2 text-textgreen">
+                            <input type="checkbox" class="w-4 h-4 rounded border-sage/30 text-sunset focus:ring-sunset">
+                            Ingat saya
+                        </label>
+                        <a href="#" class="text-sunset hover:underline">Lupa password?</a>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold text-lg">
+                        Masuk
+                    </button>
+                </form>
+                
+                <p class="text-center text-textgreen mt-6">
+                    Belum punya akun? 
+                    <button class="text-sunset font-medium hover:underline switch-to-register">Daftar sekarang</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Daftar Akun</h2>
+                    <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="register-modal">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="register-form" class="space-y-4">
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Nama Lengkap</label>
+                        <input type="text" name="name" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="Nama lengkap kamu">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Email</label>
+                        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="email@contoh.com">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">No. WhatsApp</label>
+                        <input type="tel" name="whatsapp" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="08xxxxxxxxxx">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Password</label>
+                        <input type="password" name="password" required minlength="6" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="Min. 6 karakter">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Konfirmasi Password</label>
+                        <input type="password" name="confirmPassword" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="Ulangi password">
+                    </div>
+                    <div>
+                        <label class="flex items-start gap-2 text-sm text-textgreen">
+                            <input type="checkbox" name="terms" required class="w-4 h-4 mt-1 rounded border-sage/30 text-sunset focus:ring-sunset">
+                            Saya agrees dengan <a href="#" class="text-sunset hover:underline">Syarat & Ketentuan</a>
+                        </label>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold text-lg">
+                        Daftar
+                    </button>
+                </form>
+                
+                <p class="text-center text-textgreen mt-6">
+                    Sudah punya akun? 
+                    <button class="text-sunset font-medium hover:underline switch-to-login">Masuk di sini</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Trip Detail Modal -->
     <div id="trip-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
         <div class="modal-content bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="relative">
                 <img id="modal-image" src="" alt="" class="w-full h-64 object-cover rounded-t-2xl">
-                <button id="close-modal" class="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors">
+                <button class="close-modal absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors" data-modal="trip-modal">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -625,28 +1463,49 @@
                     <p class="text-textgreen/60 text-sm">*Harga sudah termasuk transportasi, makan, dan guide</p>
                 </div>
                 
-                <button id="register-trip" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold text-lg">
-                    Daftar Trip Ini
+                <div class="mb-4">
+                    <label class="block text-textgreen font-medium mb-2">Pilih Tanggal Berangkat</label>
+                    <select id="trip-date-select" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        <option value="">Pilih tanggal...</option>
+                    </select>
+                </div>
+                
+                <button id="book-trip-btn" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold text-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Booking Trip Ini
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Registration Modal -->
-    <div id="register-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-        <div class="modal-content bg-white rounded-2xl max-w-lg w-full">
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div class="p-8">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="font-poppins font-bold text-2xl text-forest">Pendaftaran Trip</h2>
-                    <button id="close-register" class="w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Booking Trip</h2>
+                    <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="booking-modal">
                         <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
                 
-                <form id="registration-form" class="space-y-4">
-                    <input type="hidden" id="trip-id" value="">
+                <div class="bg-cream rounded-xl p-4 mb-6">
+                    <div class="flex items-center gap-4">
+                        <img id="booking-trip-image" src="" alt="" class="w-20 h-20 rounded-xl object-cover">
+                        <div>
+                            <h4 id="booking-trip-name" class="font-poppins font-bold text-forest"></h4>
+                            <p id="booking-trip-date" class="text-textgreen/70 text-sm"></p>
+                            <p id="booking-trip-price" class="text-sunset font-bold"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="booking-form" class="space-y-4">
+                    <input type="hidden" id="booking-trip-id" value="">
                     <div>
                         <label class="block text-textgreen font-medium mb-2">Nama Lengkap *</label>
                         <input type="text" name="name" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="Nama kamu">
@@ -659,28 +1518,49 @@
                         <label class="block text-textgreen font-medium mb-2">Email</label>
                         <input type="email" name="email" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="email@contoh.com">
                     </div>
-                    <div>
-                        <label class="block text-textgreen font-medium mb-2">Jumlah Peserta *</label>
-                        <select name="participants" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
-                            <option value="1">1 Orang</option>
-                            <option value="2">2 Orang</option>
-                            <option value="3">3 Orang</option>
-                            <option value="4">4 Orang</option>
-                            <option value="5">5 Orang</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Jumlah Peserta *</label>
+                            <select name="participants" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                                <option value="1">1 Orang</option>
+                                <option value="2">2 Orang</option>
+                                <option value="3">3 Orang</option>
+                                <option value="4">4 Orang</option>
+                                <option value="5">5 Orang</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Golongan Darah</label>
+                            <select name="bloodtype" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                                <option value="">Pilih...</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="AB">AB</option>
+                                <option value="O">O</option>
+                            </select>
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-textgreen font-medium mb-2">Catatan</label>
-                        <textarea name="notes" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen resize-none" placeholder="Catatan tambahan (opsional)"></textarea>
+                        <label class="block text-textgreen font-medium mb-2">Catatan / Alergi</label>
+                        <textarea name="notes" rows="2" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen resize-none" placeholder="Catatan tambahan atau alergi (opsional)"></textarea>
                     </div>
-                    <div class="bg-cream rounded-xl p-4">
+                    <div class="bg-sage/10 rounded-xl p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-textgreen">Harga per orang:</span>
+                            <span id="booking-price-per" class="text-textgreen">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-textgreen">Jumlah peserta:</span>
+                            <span id="booking-participants-count" class="text-textgreen">1</span>
+                        </div>
+                        <hr class="my-2 border-sage/20">
                         <div class="flex justify-between items-center">
-                            <span class="text-textgreen">Total Harga:</span>
-                            <span id="total-price" class="font-poppins font-bold text-xl text-sunset">Rp 0</span>
+                            <span class="font-poppins font-bold text-forest">Total:</span>
+                            <span id="booking-total-price" class="font-poppins font-bold text-2xl text-sunset">Rp 0</span>
                         </div>
                     </div>
                     <button type="submit" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold text-lg">
-                        Konfirmasi Pendaftaran
+                        Konfirmasi Booking
                     </button>
                 </form>
             </div>
@@ -695,8 +1575,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
             </div>
-            <h2 class="font-poppins font-bold text-2xl text-forest mb-4">Pendaftaran Berhasil!</h2>
-            <p class="text-textgreen mb-6">Terima kasih telah mendaftar. Tim kami akan segera menghubungi kamu melalui WhatsApp.</p>
+            <h2 class="font-poppins font-bold text-2xl text-forest mb-4">Booking Berhasil!</h2>
+            <p class="text-textgreen mb-2">Terima kasih telah booking trip bersama kami.</p>
+            <p class="text-textgreen mb-6">Tim kami akan menghubungi kamu via WhatsApp dalam 1x24 jam untuk konfirmasi.</p>
+            <p class="text-sm text-textgreen/60 mb-6">Kode Booking: <span id="booking-code" class="font-mono font-bold text-sunset">-</span></p>
             <button id="close-success" class="btn-primary px-8 py-3 rounded-xl text-white font-poppins font-semibold">
                 Tutup
             </button>
@@ -723,6 +1605,597 @@
         </button>
     </div>
 
+    <!-- Forum Topic Modal -->
+    <div id="forum-modal" class="modal fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/70 overflow-y-auto">
+        <div class="modal-content bg-white rounded-2xl max-w-4xl w-full my-8">
+            <div class="p-6 border-b border-sage/20 flex justify-between items-center sticky top-0 bg-white rounded-t-2xl z-10">
+                <h2 id="forum-modal-title" class="font-poppins font-bold text-xl text-forest">Detail Topik</h2>
+                <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="forum-modal">
+                    <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="forum-modal-content" class="p-6">
+                <!-- Topic content will be rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- New Topic Modal -->
+    <div id="new-topic-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Buat Topik Baru</h2>
+                    <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="new-topic-modal">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <form id="new-topic-form" class="space-y-4">
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Judul Topik</label>
+                        <input type="text" name="title" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="Judul diskusi kamu">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Kategori</label>
+                        <select name="category" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                            <option value="tips">Tips Pendakian</option>
+                            <option value="gear">Gear & Perlengkapan</option>
+                            <option value="story">Cerita & Pengalaman</option>
+                            <option value="question">Pertanyaan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Isi Diskusi</label>
+                        <textarea name="content" rows="6" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen resize-none" placeholder="Tulis konten diskusi kamu di sini..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold text-lg">
+                        Posting Topik
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Edit User</h2>
+                    <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="edit-user-modal">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <form id="edit-user-form" class="space-y-4">
+                    <input type="hidden" name="userId" value="">
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Nama</label>
+                        <input type="text" name="name" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Email</label>
+                        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">WhatsApp</label>
+                        <input type="tel" name="whatsapp" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold">
+                        Simpan Perubahan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Trip Modal -->
+    <div id="edit-trip-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Edit Trip</h2>
+                    <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="edit-trip-modal">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <form id="edit-trip-form" class="space-y-4">
+                    <input type="hidden" name="tripId" value="">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Nama Gunung</label>
+                            <input type="text" name="name" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Lokasi</label>
+                            <input type="text" name="location" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Ketinggian (mdpl)</label>
+                            <input type="number" name="height" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Harga (Rp)</label>
+                            <input type="number" name="price" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Durasi (hari)</label>
+                            <input type="number" name="duration" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Kesulitan</label>
+                            <select name="difficulty" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                                <option value="easy">Pemula</option>
+                                <option value="medium">Menengah</option>
+                                <option value="hard">Lanjutan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Jarak (km)</label>
+                            <input type="number" name="distance" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Deskripsi</label>
+                        <textarea name="description" rows="3" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen resize-none"></textarea>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold">
+                        Simpan Trip
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Trip Modal -->
+    <div id="add-trip-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+        <div class="modal-content bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-poppins font-bold text-2xl text-forest">Tambah Trip Baru</h2>
+                    <button class="close-modal w-10 h-10 hover:bg-cream rounded-full flex items-center justify-center transition-colors" data-modal="add-trip-modal">
+                        <svg class="w-6 h-6 text-textgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <form id="add-trip-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Nama Gunung</label>
+                            <input type="text" name="name" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="Gunung Merbabu">
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Lokasi</label>
+                            <input type="text" name="location" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="Boyolali, Jawa Tengah">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Ketinggian (mdpl)</label>
+                            <input type="number" name="height" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="3145">
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Harga (Rp)</label>
+                            <input type="number" name="price" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="450000">
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Durasi (hari)</label>
+                            <input type="number" name="duration" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="2">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Kesulitan</label>
+                            <select name="difficulty" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen">
+                                <option value="easy">Pemula</option>
+                                <option value="medium">Menengah</option>
+                                <option value="hard">Lanjutan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-textgreen font-medium mb-2">Jarak (km)</label>
+                            <input type="number" name="distance" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="150">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Image URL</label>
+                        <input type="url" name="image" class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen" placeholder="https://...">
+                    </div>
+                    <div>
+                        <label class="block text-textgreen font-medium mb-2">Deskripsi</label>
+                        <textarea name="description" rows="3" required class="w-full px-4 py-3 rounded-xl border-2 border-sage/30 bg-cream/50 text-textgreen resize-none" placeholder="Deskripsi trip..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-4 rounded-xl text-white font-poppins font-semibold">
+                        Tambah Trip
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/database.js"></script>
     <script src="js/app.js"></script>
+    
+    <!-- AI Chatbot -->
+    <div class="chatbot-container" id="chatbot-container">
+        <div class="chatbot-window" id="chatbot-window">
+            <div class="chatbot-header">
+                <div class="chatbot-header-info">
+                    <div class="chatbot-avatar">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">Asisten Pendaki</h4>
+                        <p class="text-xs opacity-80" id="chatbot-status">GROQ AI Active</p>
+                    </div>
+                </div>
+                <button class="chatbot-close" onclick="toggleChatbot()">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="chatbot-messages" id="chatbot-messages">
+                <div class="chat-message bot">
+                    Halo! 👋 Saya asisten virtual Jajak Tarus. Ada yang bisa saya bantu tentang tips pendakian, rekomendasi gear, atau informasi gunung? Silakan tanyakan!
+                </div>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-action-btn" onclick="sendQuickMessage('Tips pemula mendaki gunung')">Tips Pemula</button>
+                <button class="quick-action-btn" onclick="sendQuickMessage('Rekomendasi sleeping bag')">Rekomendasi Gear</button>
+                <button class="quick-action-btn" onclick="sendQuickMessage('Persiapan mendaki gunung')">Persiapan</button>
+                <button class="quick-action-btn" onclick="sendQuickMessage('Kesalahan fatal saat mendaki')">Kesalahan Fatal</button>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatbot-input" placeholder="Tulis pesan..." onkeypress="handleChatKeypress(event)">
+                <button onclick="sendChatMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+        <button class="chatbot-toggle" onclick="toggleChatbot()">
+            <svg id="chatbot-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/></svg>
+        </button>
+    </div>
+    
+    <script>
+        // Chatbot State
+        let chatbotOpen = false;
+        let groqApiKey = CONFIG.GROQ_API_KEY || localStorage.getItem('jajakTarus_groq_key') || '';
+        let chatHistory = [];
+        
+        // System prompt for hiking assistant
+        const systemPrompt = `Kamu adalah asisten virtual untuk komunitas pendaki gunung Jajak Tarus. Kamu sangat berpengetahuan tentang:
+- Tips dan trik mendaki gunung untuk semua level
+- Rekomendasi gear dan perlengkapan pendakian
+- Persiapan fisik dan mental
+- Keselamatan pendakian
+- Informasi gunung-gunung di Indonesia
+- Cerita dan pengalaman pendakian
+
+Selalu jawab dalam Bahasa Indonesia dengan ramah dan informatif. Berikan jawaban yang detail dan praktis. Jika tidak yakin, acknowledge dan sarankan konsultasi dengan pendaki berpengalaman.`;
+        
+        // Toggle chatbot - require login
+        function toggleChatbot() {
+            if (!currentUser) {
+                openModal('login-modal');
+                showToast('Login terlebih dahulu untuk chatting dengan AI!');
+                return;
+            }
+            
+            chatbotOpen = !chatbotOpen;
+            const window = document.getElementById('chatbot-window');
+            const icon = document.getElementById('chatbot-icon');
+            
+            if (chatbotOpen) {
+                window.classList.add('active');
+                icon.innerHTML = '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>';
+            } else {
+                window.classList.remove('active');
+                icon.innerHTML = '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>';
+            }
+        }
+        
+        // Handle enter key
+        function handleChatKeypress(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+        
+        // Send quick action message
+        function sendQuickMessage(message) {
+            if (!currentUser) {
+                openModal('login-modal');
+                showToast('Login terlebih dahulu!');
+                return;
+            }
+            addMessage(message, 'user');
+            processMessage(message);
+        }
+        
+        // Send chat message
+        function sendChatMessage() {
+            if (!currentUser) {
+                openModal('login-modal');
+                showToast('Login terlebih dahulu!');
+                return;
+            }
+            const input = document.getElementById('chatbot-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, 'user');
+            input.value = '';
+            processMessage(message);
+        }
+        
+        // Add message to chat
+        function addMessage(content, type) {
+            const messages = document.getElementById('chatbot-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-message ' + type;
+            msgDiv.textContent = content;
+            messages.appendChild(msgDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        // Add typing indicator
+        function showTyping() {
+            const messages = document.getElementById('chatbot-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message bot loading';
+            typingDiv.id = 'typing-indicator';
+            messages.appendChild(typingDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        // Remove typing indicator
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+        
+        // Process message with AI or demo
+        async function processMessage(userMessage) {
+            showTyping();
+            
+            chatHistory.push({ role: 'user', content: userMessage });
+            
+            if (!groqApiKey) {
+                // Demo mode with predefined responses
+                setTimeout(() => {
+                    hideTyping();
+                    const response = getDemoResponse(userMessage);
+                    addMessage(response, 'bot');
+                    chatHistory.push({ role: 'assistant', content: response });
+                }, 1000);
+            } else {
+                // GROQ API mode
+                try {
+                    const response = await callGroqAPI(userMessage);
+                    hideTyping();
+                    addMessage(response, 'bot');
+                    chatHistory.push({ role: 'assistant', content: response });
+                } catch (error) {
+                    hideTyping();
+                    addMessage('Maaf, terjadi kesalahan. Silakan coba lagi.', 'bot');
+                    console.error('Chatbot error:', error);
+                }
+            }
+        }
+        
+        // Call GROQ API
+        async function callGroqAPI(userMessage) {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + groqApiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...chatHistory.slice(-10),
+                        { role: 'user', content: userMessage }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 1024
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('GROQ API error: ' + response.status);
+            }
+            
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+        
+        // Demo responses (when no API key)
+        function getDemoResponse(message) {
+            const lowerMsg = message.toLowerCase();
+            
+            if (lowerMsg.includes('tips') || lowerMsg.includes('pemula')) {
+                return `🎒 **Tips untuk Pendaki Pemula:**
+
+1. **Latihan Fisik** - Latihan minimal 2-3 minggu sebelum pendakian. Fokus pada kardio dan kekuatan kaki.
+
+2. **Pilih Gunung yang Tepat** - Mulai dari gunung dengan ketinggian di bawah 2000mdpl seperti:
+   • Bromo (2329mdpl) - Cocok untuk pemula
+   • Prau (2565mdpl) - View spektakuler
+   • Papandayan (2625mdpl) - Jalur menarik
+
+3. **Persiapkan Gear Dasar:**
+   • Sepatu gunung yang nyaman
+   • Jaket windbreaker
+   • Headlamp
+   • Air minum (minimal 2 liter)
+   • Makanan ringan
+
+4. **Cek Cuaca** - Selalu cek forecast sebelum mendaki
+
+5. **Jangan Mendaki Sendirian** - Bergabung dengan komunitas seperti Jajak Tarus! 🌄
+
+Ada yang ingin ditanyakan lebih detail?`;
+            }
+            
+            if (lowerMsg.includes('gear') || lowerMsg.includes('perlengkapan') || lowerMsg.includes('sleeping') || lowerMsg.includes('tas')) {
+                return `🎒 **Rekomendasi Gear Pendakian:**
+
+**Sleeping Bag:**
+• Budget < 500rb: Queent item / Decathlon Forclaz MT100
+• Budget 500rb-1jt: Decathlon Forclaz MT500 ⭐
+• Budget > 1jt: The North Face Cat's Meow
+
+**Tas carrier (50-70L):**
+• Budget < 500rb: Consina Strike 60L
+• Budget 500rb-1.5jt: Osprey Talon 44 / Deuter Futura 50L ⭐
+• Budget > 1.5jt: Gregory Baltoro 65 / Osprey Atmos 65AG
+
+**Sepatu:**
+• Merrell Moab 3 - All-rounder terbaik ⭐
+• Salomon X Ultra 4 - Ringan dan grippy
+• La Sportiva Bushido - Untuk medan teknis
+
+**Tips:** Beli gear sesuai budget, quality over quantity! Apakah ada gear spesifik yang ingin direkomendasikan?`;
+            }
+            
+            if (lowerMsg.includes('persiapan') || lowerMsg.includes('bawa') || lowerMsg.includes('packing')) {
+                return `📋 **Checklist Persiapan Mendaki:**
+
+**Dokumen:**
+☐ Booking & reservasi
+☐ KTP (jika diperlukan)
+☐ Cash (tidak semua tempat ada ATM)
+
+**Pakaian:**
+☐ Baju dry-fit (2-3 pcs)
+☐ Jaket windbreaker/waterproof
+☐ Celana trekking
+☐ Kaos kaki hiking (2 pasang)
+☐ Topi/bandana
+☐ Sarung tangan (untuk gunung tinggi)
+
+**Gear:**
+☐ Tas carrier
+☐ Sleeping bag
+☐ Matras
+☐ Headlamp + spare battery
+☐ Tongsis/trekking pole
+
+**Makanan & Minuman:**
+☐ Air minum (2-3 liter)
+☐ Makanan tinggi energi (coklat, granola, nuts)
+☐ Lunch & dinner
+☐ Obat-obatan pribadi
+
+**Toiletries:**
+☐ Tissue basah & kering
+☐ Sunscreen
+☐ Lip balm
+☐ P3K kit
+
+**Pastikan juga:** Kondisi fisik prima & asuransi perjalanan! 🏔️`;
+            }
+            
+            if (lowerMsg.includes('kesalahan') || lowerMsg.includes('fatal') || lowerMsg.includes('salah')) {
+                return `⚠️ **10 Kesalahan Fatal Pendaki Pemula:**
+
+1. **Tidak latihan fisik** - Langsung mendaki tanpa preparasi ❌
+
+2. **Bawa terlalu banyak** - Tas 20kg+ saat tidak perlu ❌
+
+3. **Nggak cek cuaca** - Mendaki saat hujan/petir ❌
+
+4. **Nggak bawa backup makanan** - Tidak ada makanan darurat ❌
+
+5. **Ganti-ganti-guide** - Tidak konsisten dengan satu pemandu ❌
+
+6. **Nggak bawa obat pribadi** - Asma, vertigo, dll ❌
+
+7. **Mendaki sendirian** - Sangat tidak disarankan ❌
+
+8. **Nggak informasikan行程** - Keluarga tidak tahu jadwal ❌
+
+9. **Terlalu racing** - Mengejar sunset tanpa istirahat cukup ❌
+
+10. **Nggak bawa warm layer** - Dingin di ketinggian ❌
+
+**Tips:** Selalu utamakan safety! Lebih baik slow tapi safety tetap terjaga. 🙏`;
+            }
+            
+            if (lowerMsg.includes('hallo') || lowerMsg.includes('halo') || lowerMsg.includes('hi') || lowerMsg.includes('hay')) {
+                return `Hai! 👋 Selamat datang di Jajak Tarus! 🏔️
+
+Saya asisten virtual yang siap membantu kamu dengan:
+• Tips dan trik pendakian
+• Rekomendasi gear
+• Informasi gunung
+• Persiapan sebelum mendaki
+
+Silakan tanyakan apa saja, saya akan bantu semampunya! 🌲`;
+            }
+            
+            return `Terima kasih atas pertanyaannya! 🏔️
+
+Untuk memberikan jawaban yang tepat, ada beberapa topik yang bisa saya bantu:
+
+1. **Tips Pendakian** - Untuk pemula sampai lanjutan
+2. **Rekomendasi Gear** - Sleeping bag, tas, sepatu, dll
+3. **Persiapan** - Checklist dan tips packing
+4. **Informasi Gunung** - Rekomendasi gunung sesuai level
+5. **Keselamatan** - Tips safety dan emergency
+
+Silakan tanyakan lebih spesifik ya! 😊`;
+        }
+        
+        // Check if API key is configured
+        const hasValidApiKey = groqApiKey && groqApiKey !== 'gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+        
+        // Update status display
+        const statusEl = document.getElementById('chatbot-status');
+        if (statusEl) {
+            statusEl.textContent = hasValidApiKey ? 'AI Powered by GROQ' : 'Demo Mode';
+        }
+        
+        if (hasValidApiKey) {
+            console.log('GROQ API key configured - AI chatbot active');
+        } else {
+            console.log('Chatbot running in demo mode (no API key configured)');
+        }
+        
+        // Modal helpers
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        // Close modal on background click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
